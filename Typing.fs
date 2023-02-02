@@ -16,7 +16,7 @@ type subst = (tyvar * ty) list
 // TODO implement this
 let compose_subst (s1 : subst) (s2 : subst) : subst = s1 @ s2 //@ means append (wrong obv)
 
-// TODO implement this
+// TODO Continue implementing this
 let rec unify (t1 : ty) (t2 : ty) : subst = 
     match (t1, t2) with
     | TyName s1, TyName s2 when s1 = s2 -> []
@@ -34,7 +34,7 @@ let rec unify (t1 : ty) (t2 : ty) : subst =
         //List.fold(fun s (t1, t2) -> compose_subst s (unify t1 t2)) [] (List.zip ts1 ts2)
     | _ -> type_error "Cannot unify types %O and %O" t1 t2
 
-// TODO implement this
+// TODO Continue implementing this
 let rec apply_subst (s : subst) (t : ty) : ty =
     match t with 
 //    | TyName s -> TyName s
@@ -74,7 +74,7 @@ let gamma0 = [
 
 ]
 
-// TODO for exam
+// TODO Continuing implementing
 let rec typeinfer_expr (env : scheme env) (e : expr) : ty * subst =
     match e with
     | Lit (LInt _) -> TyInt, []
