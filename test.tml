@@ -10,8 +10,8 @@ let g x = f x x
 in () *)
 
 
-let h = fun (x:int) -> x
-in h
+let h = fun (x:int) -> 1 ++
+in h 2
 
 
 

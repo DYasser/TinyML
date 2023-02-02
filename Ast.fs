@@ -70,6 +70,7 @@ and expr =
     | IfThenElse of expr * expr * expr option
     | Tuple of expr list
     | BinOp of expr * string * expr
+    | BinOp1 of expr * string // added binop with two args
     | UnOp of string * expr
 
 let fold_params parms e0 = 
@@ -95,7 +96,6 @@ type value =
 type interactive = IExpr of expr | IBinding of binding
 
 // pretty printers
-
 //
 
 // utility function for printing lists by flattening strings with a separator 

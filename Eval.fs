@@ -56,6 +56,10 @@ let rec eval_expr (env : value env) (e : expr) : value =
     | BinOp (e1, "+", e2) -> binop (+) (+) env e1 e2
     | BinOp (e1, "-", e2) -> binop (-) (-) env e1 e2
     | BinOp (e1, "*", e2) -> binop ( * ) ( * ) env e1 e2
+    | BinOp (e1, "/", e2) -> binop ( / ) ( / ) env e1 e2 // added division
+    | BinOp (e1, "%", e2) -> binop ( % ) ( % ) env e1 e2 // added modulo
+    //| BinOp (e1, "**", e2) -> binop ( ** ) ( ** ) env e1 e2 // added modulo
+    //| BinOp1 (e1, "++") -> binop_one "++" env e1 // added increment
     // TODO: implement other binary ops
 
     | _ -> unexpected_error "eval_expr: unsupported expression: %s [AST: %A]" (pretty_expr e) e
@@ -63,12 +67,25 @@ let rec eval_expr (env : value env) (e : expr) : value =
 and binop op_int op_float env e1 e2 =
     let v1 = eval_expr env e1
     let v2 = eval_expr env e2
-    match v1, v2 with
+    match v1, v2 with 
     | VLit (LInt x), VLit (LInt y) -> VLit (LInt (op_int x y))
     | VLit (LFloat x), VLit (LFloat y) -> VLit (LFloat (op_float x y))
     | VLit (LInt x), VLit (LFloat y) -> VLit (LFloat (op_float (float x) y))
     | VLit (LFloat x), VLit (LInt y) -> VLit (LFloat (op_float x (float y)))
-    | _ -> unexpected_error "eval_expr: illegal operands in binary operator (+): %s + %s" (pretty_value v1) (pretty_value v2)
+    | _ -> unexpected_error "eval_expr: illegal operands in binary operator %s: %s + %s" ("(+)") (pretty_value v1) (pretty_value v2)
+
+(*and binop_one op env e1 =
+    let v1 = eval_expr env e1
+    let eInt:expr = Lit (LInt 1)
+    let eFloat:expr = Lit (LFloat 1.0)
+    if (op.CompareTo("+") = 1) then 
+        match v1 with
+        | VLit (LInt x) -> binop (+) (+) env e1 eInt
+        | VLit (LFloat x) -> binop (+) (+) env e1 eFloat
+        | _ -> unexpected_error "eval_expr: illegal operands in binary operator (+): %s" (pretty_value v1)
+    else
+        VLit (LInt 1)
+*)
 
 
 
