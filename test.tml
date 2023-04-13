@@ -7,12 +7,35 @@
 
 let f x y = (x, y) in
 let g x = f x x
-in () *)
+in g 6
+*)
+
+(*
+let arw = fun (x:int) -> 2.4
+in arw 2.5
+*)
+
+// 5 - 2
+//true < false
+
+//let xpr = fun x -> x + 1
+//in xpr 2
+
+let w = (1,2,3)
+in let f x = x
+in f w
+
+(*
+//test rec
+let rec testrec = fun x -> 
+if x > 10 then 10
+else testrec (x + 1)
+in testrec 5
+*)
 
 
-let h = fun (x:int) -> 1 ++
-in h 2
-
-
-
-
+(*let x = 1
+in
+if true then 1 
+else 2
+*)

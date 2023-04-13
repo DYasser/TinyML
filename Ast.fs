@@ -9,19 +9,16 @@ open Printf
 
 // errors
 //
-
 exception SyntaxError of string * FSharp.Text.Lexing.LexBuffer<char>
 exception TypeError of string
 exception UnexpectedError of string
 
 let throw_formatted exnf fmt = ksprintf (fun s -> raise (exnf s)) fmt
-
 let unexpected_error fmt = throw_formatted UnexpectedError fmt
 
 
 // AST type definitions
 //
-
 type tyvar = int
 
 type ty =
@@ -29,7 +26,8 @@ type ty =
     | TyArrow of ty * ty
     | TyVar of tyvar
     | TyTuple of ty list
-
+    | TyList of ty // adding list of ty type
+    
 // pseudo data constructors for literal types
 let TyFloat = TyName "float"
 let TyInt = TyName "int"
@@ -53,25 +51,29 @@ let (|TyUnit|_|) = (|TyLit|_|) "unit"
 //type scheme = Forall of tyvar Set * ty
 type scheme = Forall of tyvar list * ty
 
+//type substitution = list of tyvar * ty
+type subst = (tyvar * ty) list
+
 type lit = LInt of int
          | LFloat of float
+         | LBool of bool
          | LString of string
          | LChar of char
-         | LBool of bool
          | LUnit 
 
 type binding = bool * string * ty option * expr    // (is_recursive, id, optional_type_annotation, expression)
 and expr = 
     | Lit of lit
+    | Var of string
     | Lambda of string * ty option * expr
     | App of expr * expr
-    | Var of string
     | LetIn of binding * expr
+    //| LetRec
     | IfThenElse of expr * expr * expr option
     | Tuple of expr list
     | BinOp of expr * string * expr
-    | BinOp1 of expr * string // added binop with two args
     | UnOp of string * expr
+    
 
 let fold_params parms e0 = 
     List.foldBack (fun (id, tyo) e -> Lambda (id, tyo, e)) parms e0
@@ -97,7 +99,6 @@ type interactive = IExpr of expr | IBinding of binding
 
 // pretty printers
 //
-
 // utility function for printing lists by flattening strings with a separator 
 let rec flatten p sep es =
     match es with
@@ -110,6 +111,7 @@ let pretty_env p env = sprintf "[%s]" (flatten (fun (x, o) -> sprintf "%s=%s" x 
 
 // print any tuple given a printer p for its elements
 let pretty_tupled p l = flatten p ", " l
+let pretty_tupleds l = pretty_tupled (sprintf "%s") l
 
 let rec pretty_ty t =
     match t with
@@ -117,6 +119,7 @@ let rec pretty_ty t =
     | TyArrow (t1, t2) -> sprintf "%s -> %s" (pretty_ty t1) (pretty_ty t2)
     | TyVar n -> sprintf "'%d" n
     | TyTuple ts -> sprintf "(%s)" (pretty_tupled pretty_ty ts)
+    | TyList l -> sprintf "%O" l // pretty type List
 
 let pretty_lit lit =
     match lit with
@@ -135,8 +138,7 @@ let rec pretty_expr e =
     | Lambda (x, None, e) -> sprintf "fun %s -> %s" x (pretty_expr e)
     | Lambda (x, Some t, e) -> sprintf "fun (%s : %s) -> %s" x (pretty_ty t) (pretty_expr e)
     
-    // TODO pattern-match sub-application cases
-    | App (e1, e2) -> sprintf "%s %s" (pretty_expr e1) (pretty_expr e2)
+    | App (e1, e2) -> pretty_app e  //Pretty app
 
     | Var x -> x
 
@@ -164,8 +166,23 @@ let rec pretty_expr e =
     | BinOp (e1, op, e2) -> sprintf "%s %s %s" (pretty_expr e1) op (pretty_expr e2)
     
     | UnOp (op, e) -> sprintf "%s %s" op (pretty_expr e)
-    
+
     | _ -> unexpected_error "pretty_expr: %s" (pretty_expr e)
+
+and pretty_app e = 
+    match e with 
+    | App (e1,e2) ->
+        let expr1 = 
+            match e1 with
+            | Var _ | Lit _ -> pretty_expr e1
+            | App (_,_) -> pretty_app e1
+            | _ -> sprintf "%s" (pretty_expr e1)
+        let expr2 = 
+            match e2 with
+            | Var _ | Lit _ -> pretty_expr e2
+            | _ -> sprintf "%s" (pretty_expr e2)
+        sprintf "%s %s" expr1 expr2
+    | _ -> unexpected_error "pretty_app: e <%s> is not expression" (pretty_expr e)
 
 let rec pretty_value v =
     match v with
@@ -176,4 +193,12 @@ let rec pretty_value v =
     | Closure (env, x, e) -> sprintf "<|%s;%s;%s|>" (pretty_env pretty_value env) x (pretty_expr e)
     
     | RecClosure (env, f, x, e) -> sprintf "<|%s;%s;%s;%s|>" (pretty_env pretty_value env) f x (pretty_expr e)
-    
+
+let pretty_subst (s:subst) =
+    let pretty_str (tvar, t) = sprintf "('%d=>%s)" tvar (pretty_ty t)
+    sprintf "[%s]" (pretty_tupleds (List.map (fun sub -> pretty_str sub) s))
+
+let rec pretty_scheme (sch:scheme) =
+    match sch with
+    | Forall (a, t) ->
+        sprintf "forall %s.%s" (List.fold (fun state var -> sprintf "%s,'%d" state var) "" a) (pretty_ty t) 
