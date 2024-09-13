@@ -11,9 +11,6 @@ The main reason of this porting is to use the dotnet cli for executing the entir
 You can simply clone the repo using the command `git clone https://github.com/DYasser/TinyML`.
 
 ## Usage
-Move inside the directory *"./src/TinyML"*.
-
-Once there, you can use:
 
 * `dotnet build` to compile the interpreter
 
